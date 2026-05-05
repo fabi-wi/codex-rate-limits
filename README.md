@@ -2,34 +2,72 @@
 
 # Codex Rate Limits
 
-Clean macOS menu-bar app for tracking two Codex rate limits:
+Unofficial macOS menu-bar companion for keeping Codex rate limits visible while you work.
 
-- Week Limit
-- 5 Hour Limit
+The app shows two concentric indicators:
 
-The status item uses two concentric circular indicators. The outer circle is the Week Limit, and the inner circle is the 5 Hour Limit. The popover shows the same rings at a larger size, plus remaining percentage, used percentage, and reset timing.
+- **Outer ring:** weekly limit
+- **Inner ring:** 5-hour limit
 
-The popover uses a native macOS translucent material, so the background naturally changes with whatever is behind the window.
+It reads the same live Codex usage data shown in the Codex desktop app, then displays the remaining percentage and reset timing in a small translucent macOS popover.
 
-This is an unofficial open-source companion app. It is not affiliated with OpenAI.
+## Install
+
+1. Download the latest `CodexRateLimits-vX.Y.Z-macos-arm64.zip` from [Releases](https://github.com/fabi-wi/codex-rate-limits/releases).
+2. Unzip it.
+3. Move `CodexRateLimits.app` to your `Applications` folder.
+4. Open the app.
+
+The app lives only in the macOS menu bar. It does not show a Dock icon.
+
+If macOS blocks first launch because the app is not notarized yet, right-click `CodexRateLimits.app` and choose **Open**.
 
 ## Requirements
 
 - macOS 14 or newer
-- Xcode command line tools or Xcode
-- Swift 6 compatible toolchain
-- Codex signed in with ChatGPT, with `~/.codex/auth.json` present
+- Codex desktop app installed
+- Codex signed in with ChatGPT
+- Local Codex auth file at `~/.codex/auth.json`
 
-## Run Locally
+No personal project path or manual data file is required for normal use.
+
+## How It Works
+
+Codex Rate Limits reads your local Codex auth file and calls:
+
+```text
+https://chatgpt.com/backend-api/wham/usage
+```
+
+It maps Codex usage windows like this:
+
+- `limit_window_seconds` near `18000` -> 5-hour limit
+- `limit_window_seconds` near `604800` -> weekly limit
+
+The app polls every 30 seconds and refreshes immediately when you open the popover.
+
+## Privacy
+
+The app uses your Codex access token in memory only to request your rate-limit usage. It does not log, print, upload, or store tokens.
+
+See [SECURITY.md](SECURITY.md) for details.
+
+## Build From Source
+
+You can clone the repo anywhere:
 
 ```bash
-cd /Users/admin/Developer/my_projects/codex-rate-limits
+git clone https://github.com/fabi-wi/codex-rate-limits.git
+cd codex-rate-limits
 ./scripts/run.sh
 ```
 
-The app runs as an accessory/menu-bar app. It does not show a Dock icon.
+To build a local app bundle:
 
-By default it reads the same ChatGPT/Codex usage endpoint used by the Codex app. It reloads the local Codex auth file before each request, so refreshed Codex tokens are picked up automatically.
+```bash
+./scripts/build_app.sh
+open .build/release/CodexRateLimits.app
+```
 
 To work in Xcode:
 
@@ -39,52 +77,43 @@ open Package.swift
 
 Select the `CodexRateLimitsApp` scheme and run it.
 
-## Install From Release
+## Automatic Opening With Codex
 
-Download the latest `CodexRateLimits-vX.Y.Z-macos-arm64.zip` asset from GitHub Releases, unzip it, and open `CodexRateLimits.app`.
+The downloadable app works as soon as you open it.
 
-The app is not notarized yet. If macOS blocks first launch, right-click the app and choose **Open**.
-
-## Live Data Source
-
-The default source is live Codex usage:
-
-```text
-~/.codex/auth.json -> https://chatgpt.com/backend-api/wham/usage
-```
-
-The app polls every 30 seconds, refreshes immediately when the popover opens, and maps Codex's `used_percent` windows like this:
-
-- `limit_window_seconds` near `18000` -> 5 Hour Limit
-- `limit_window_seconds` near `604800` -> Week Limit
-
-Force a different auth file if needed:
+If you are building from source and want the companion to open automatically when Codex is running, install the optional local LaunchAgent:
 
 ```bash
-CODEX_AUTH_FILE=/absolute/path/to/auth.json ./scripts/run.sh
+./scripts/install-codex-launcher.sh
 ```
 
-## Privacy
+Remove it later with:
 
-The app reads `~/.codex/auth.json` locally and uses the access token in memory to request usage data from `https://chatgpt.com/backend-api/wham/usage`. It does not log, print, upload, or store tokens. See `SECURITY.md` for the short security note.
+```bash
+./scripts/uninstall-codex-launcher.sh
+```
+
+Remove it and quit the menu-bar app:
+
+```bash
+./scripts/uninstall-codex-launcher.sh --quit-app
+```
 
 ## Local Test Data
 
-The bundled JSON source is still available for local testing:
+Live Codex usage is the default. For development or demos, you can run against a local JSON file:
 
 ```bash
 CODEX_RATE_LIMITS_SOURCE=local ./scripts/run.sh
 ```
 
-The local data file is:
+The default local file inside your checkout is:
 
 ```text
-/Users/admin/Developer/my_projects/codex-rate-limits/Data/ratelimits.json
+Data/ratelimits.json
 ```
 
-In local mode, the app reads this file every second and updates the rings when the values change.
-
-Use the helper script:
+Update it with:
 
 ```bash
 ./scripts/update-data.sh 62000 200000 16500 50000
@@ -96,51 +125,10 @@ Arguments are:
 WEEK_USED WEEK_LIMIT FIVE_HOUR_USED FIVE_HOUR_LIMIT
 ```
 
-You can also point the app at another JSON file:
+You can also choose any JSON file:
 
 ```bash
-CODEX_RATE_LIMITS_FILE=/absolute/path/to/ratelimits.json ./scripts/run.sh
-```
-
-## Build an App Bundle
-
-```bash
-cd /Users/admin/Developer/my_projects/codex-rate-limits
-./scripts/build_app.sh
-open .build/release/CodexRateLimits.app
-```
-
-The generated bundle uses `LSUIElement`, so it stays in the menu bar without a Dock icon.
-
-## Open Automatically With Codex
-
-Install the local LaunchAgent:
-
-```bash
-cd /Users/admin/Developer/my_projects/codex-rate-limits
-./scripts/install-codex-launcher.sh
-```
-
-This builds the app bundle and installs:
-
-```text
-~/Library/LaunchAgents/local.codex-rate-limits.watcher.plist
-```
-
-macOS then runs a lightweight watcher every 10 seconds. When `/Applications/Codex.app` is running, the watcher opens `CodexRateLimits.app` in live Codex mode.
-
-When Codex quits, the app closes itself and the watcher also cleans up any remaining companion process. If you close the companion from its top-right close button while Codex is still running, it stays closed for that Codex session.
-
-Remove the automatic launcher:
-
-```bash
-./scripts/uninstall-codex-launcher.sh
-```
-
-Remove it and quit the menu-bar app:
-
-```bash
-./scripts/uninstall-codex-launcher.sh --quit-app
+CODEX_RATE_LIMITS_SOURCE=local CODEX_RATE_LIMITS_FILE=/path/to/ratelimits.json ./scripts/run.sh
 ```
 
 ## Local JSON Schema
@@ -180,44 +168,29 @@ Sources/
     Models/      Rate-limit snapshot and metric types
     Utils/       JSON/date/number formatting helpers
 Tests/           Core parsing and provider tests
-scripts/         Run, app-bundle build, and data-update helpers
-Data/            Editable local rate-limit JSON source
+scripts/         Run, app-bundle build, release, and launcher helpers
+Data/            Editable local rate-limit JSON source for development
 ```
-
-## Data Flow
-
-`CodexUsageRateLimitProvider` reads `~/.codex/auth.json`, calls the Codex usage endpoint, maps the 5-hour and weekly windows into `RateLimitSnapshot`, and emits changes to `RateLimitStore`. The status bar item and SwiftUI popover observe the store. UI updates animate automatically when the Week Limit or 5 Hour Limit changes.
-
-## Extension Points
-
-- Keep the UI unchanged by continuing to publish `RateLimitSnapshot`.
-- Use `CODEX_RATE_LIMITS_SOURCE=local` for JSON-driven testing or demos.
-- Adjust `CodexUsageRateLimitProvider` if Codex changes the usage endpoint shape in a future app release.
 
 ## Tests
 
 ```bash
-cd /Users/admin/Developer/my_projects/codex-rate-limits
 swift test
 ```
 
 ## Release Packaging
 
-Build a signed local release archive and checksum:
-
 ```bash
 ./scripts/package_release.sh 0.2.0
 ```
 
-Publish to GitHub after authenticating `gh`:
+Publish a release after authenticating GitHub CLI:
 
 ```bash
 gh auth login
 ./scripts/publish_release.sh 0.2.0
 ```
 
-By default this publishes to:
+## License
 
-```text
-https://github.com/fabi-wi/codex-rate-limits
-```
+MIT
