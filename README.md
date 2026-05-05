@@ -35,6 +35,7 @@ If macOS blocks first launch because the app is not notarized yet, right-click `
 ## Requirements
 
 - macOS 14 or newer
+- Apple Silicon Mac for the prebuilt Homebrew and release downloads
 - Codex desktop app installed
 - Codex signed in with ChatGPT
 - Local Codex auth file at `~/.codex/auth.json`
