@@ -1,0 +1,15 @@
+{
+  "fiveHourLimit": {
+    "label": "5 Hour Limit",
+    "limit": 50000,
+    "resetAt": "2026-05-05T18:00:00Z",
+    "used": 16500
+  },
+  "updatedAt": "2026-05-05T14:23:00Z",
+  "weekLimit": {
+    "label": "Week Limit",
+    "limit": 200000,
+    "resetAt": "2026-05-11T00:00:00Z",
+    "used": 62000
+  }
+}
