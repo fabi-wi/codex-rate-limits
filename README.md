@@ -13,6 +13,16 @@ It reads the same live Codex usage data shown in the Codex desktop app, then dis
 
 ## Install
 
+### Homebrew
+
+```bash
+brew install --cask fabi-wi/tap/codex-rate-limits
+```
+
+After installing, open **Codex Rate Limits** from Applications or Spotlight.
+
+### Manual Download
+
 1. Download the latest `CodexRateLimits-vX.Y.Z-macos-arm64.zip` from [Releases](https://github.com/fabi-wi/codex-rate-limits/releases).
 2. Unzip it.
 3. Move `CodexRateLimits.app` to your `Applications` folder.
