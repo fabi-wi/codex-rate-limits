@@ -1,3 +1,5 @@
+<img width="1672" height="941" alt="ChatGPT Image 5  Mai 2026, 19_54_07" src="https://github.com/user-attachments/assets/2906e35c-8b6c-481e-9c7c-3b6d23c2e9fe" />
+
 # Codex Rate Limits
 
 Clean macOS menu-bar app for tracking two Codex rate limits:
