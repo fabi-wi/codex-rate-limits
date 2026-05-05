@@ -19,7 +19,7 @@ fi
 mkdir -p "$DIST_DIR"
 rm -f "$DIST_DIR/$ARCHIVE_NAME" "$DIST_DIR/$ARCHIVE_NAME.sha256"
 
-ditto -c -k --keepParent "$APP_DIR" "$DIST_DIR/$ARCHIVE_NAME"
+COPYFILE_DISABLE=1 ditto --norsrc --noextattr -c -k --keepParent "$APP_DIR" "$DIST_DIR/$ARCHIVE_NAME"
 (
   cd "$DIST_DIR"
   shasum -a 256 "$ARCHIVE_NAME" > "$ARCHIVE_NAME.sha256"

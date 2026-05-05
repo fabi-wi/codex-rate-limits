@@ -2,13 +2,14 @@ import SwiftUI
 import CodexRateLimitsCore
 
 struct RateLimitPopoverView: View {
-    static let preferredSize = CGSize(width: 340, height: 486)
+    static let preferredSize = CGSize(width: 340, height: 456)
 
     @ObservedObject var store: RateLimitStore
+    @State private var now = Date()
 
-    let onRefresh: () -> Void
-    let onRevealDataFile: () -> Void
     let onQuit: () -> Void
+
+    private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
@@ -27,10 +28,6 @@ struct RateLimitPopoverView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-
-                GlassDivider()
-
-                footer
             }
         }
         .frame(
@@ -39,6 +36,7 @@ struct RateLimitPopoverView: View {
             alignment: .top
         )
         .preferredColorScheme(.dark)
+        .onReceive(clock) { now = $0 }
     }
 
     private var header: some View {
@@ -54,7 +52,7 @@ struct RateLimitPopoverView: View {
 
             Spacer()
 
-            HStack(spacing: 6) {
+            HStack(spacing: 12) {
                 Circle()
                     .fill(store.errorMessage == nil ? Color.green : Color.orange)
                     .frame(width: 7, height: 7)
@@ -62,6 +60,22 @@ struct RateLimitPopoverView: View {
                 Text(store.errorMessage == nil ? "Live" : "Check data")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                Button(action: onQuit) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.92))
+                        .frame(width: 28, height: 28)
+                        .background(.white.opacity(0.14))
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(.white.opacity(0.20), lineWidth: 1)
+                        }
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help("Close Codex Rate Limits")
             }
         }
         .padding(.horizontal, 18)
@@ -78,7 +92,8 @@ struct RateLimitPopoverView: View {
                     title: "Week Limit",
                     detail: "Outer circle",
                     metric: snapshot.weekLimit,
-                    tint: LimitPalette.week
+                    tint: LimitPalette.week,
+                    now: now
                 )
 
                 GlassDivider()
@@ -87,7 +102,8 @@ struct RateLimitPopoverView: View {
                     title: "5 Hour Limit",
                     detail: "Inner circle",
                     metric: snapshot.fiveHourLimit,
-                    tint: LimitPalette.fiveHour
+                    tint: LimitPalette.fiveHour,
+                    now: now
                 )
             }
         }
@@ -104,54 +120,9 @@ struct RateLimitPopoverView: View {
             Text(store.errorMessage ?? "Waiting for rate-limit data")
                 .font(.system(size: 13, weight: .medium))
                 .multilineTextAlignment(.center)
-
-            Text(store.dataFileURL.path)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .truncationMode(.middle)
-                .multilineTextAlignment(.center)
         }
-        .frame(height: 354)
+        .frame(maxHeight: .infinity)
         .padding(.horizontal, 22)
-    }
-
-    private var footer: some View {
-        VStack(spacing: 10) {
-            HStack {
-                if let snapshot = store.snapshot {
-                    Text("Updated \(RateLimitFormatter.timestamp(snapshot.updatedAt))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Local JSON source")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-            }
-
-            HStack(spacing: 10) {
-                Button(action: onRefresh) {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                }
-
-                Button(action: onRevealDataFile) {
-                    Label("Data", systemImage: "doc.text.magnifyingglass")
-                }
-
-                Spacer()
-
-                Button(action: onQuit) {
-                    Label("Quit", systemImage: "power")
-                }
-            }
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 10)
     }
 }
 

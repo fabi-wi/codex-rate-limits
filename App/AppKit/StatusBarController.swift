@@ -42,12 +42,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         popover.contentViewController = NSHostingController(
             rootView: RateLimitPopoverView(
                 store: store,
-                onRefresh: { [weak store] in store?.refresh() },
-                onRevealDataFile: { [weak store] in
-                    guard let url = store?.dataFileURL else { return }
-                    NSWorkspace.shared.activateFileViewerSelecting([url])
-                },
                 onQuit: {
+                    CompanionLaunchSuppression.suppressForCurrentCodexSession()
                     NSApplication.shared.terminate(nil)
                 }
             )
@@ -76,7 +72,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             """
         } else if errorMessage != nil {
             button.title = "!"
-            button.toolTip = "Codex rate limits: data file could not be read"
+            button.toolTip = "Codex rate limits: live usage could not be read"
         } else {
             button.title = "--"
             button.toolTip = "Codex rate limits"
@@ -94,6 +90,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private func showPopover() {
         guard let button = statusItem.button else { return }
 
+        store.refresh()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
         configurePopoverWindow()

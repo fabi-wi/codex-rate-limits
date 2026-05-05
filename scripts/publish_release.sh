@@ -31,8 +31,8 @@ elif ! git remote get-url origin >/dev/null 2>&1; then
   git remote add origin "$REMOTE"
 fi
 
-git add .gitignore App Data Package.swift README.md Resources Sources Tests scripts CHANGELOG.md docs
-git commit -m "Release Codex Rate Limits 0.1.0" || true
+git add .github .gitignore App Data Package.swift README.md Resources Sources Tests scripts CHANGELOG.md LICENSE SECURITY.md docs
+git commit -m "Release Codex Rate Limits $VERSION" || true
 git branch -M main
 git push -u origin main
 

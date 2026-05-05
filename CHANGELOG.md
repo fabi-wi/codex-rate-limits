@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 - 2026-05-05
+
+Release-ready live Codex version.
+
+- Added live Codex usage polling from the same rate-limit endpoint used by the Codex desktop app.
+- Added automatic token refresh pickup by rereading `~/.codex/auth.json` before each request.
+- Added a top-right close button and session-level companion launch suppression.
+- Added automatic app termination when Codex quits.
+- Removed footer status text from the popover.
+- Simplified the glass background to native macOS material without a synthetic color overlay.
+- Added CI, security notes, MIT license, and release checklist for open-source distribution.
+
 ## 0.1.0 - 2026-05-05
 
 Initial public release of Codex Rate Limits.

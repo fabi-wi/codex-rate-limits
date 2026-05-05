@@ -1,15 +1,41 @@
 import Foundation
 
 struct AppConfiguration {
+    enum Source: String {
+        case codex
+        case local
+    }
+
+    let source: Source
     let dataFileURL: URL
+    let authFileURL: URL
 
     static func load(
         environment: [String: String] = ProcessInfo.processInfo.environment,
         arguments: [String] = CommandLine.arguments
     ) -> AppConfiguration {
+        let source = configuredSource(environment: environment, arguments: arguments)
         let fileURL = configuredDataFileURL(environment: environment, arguments: arguments)
+        let authFileURL = configuredAuthFileURL(environment: environment, arguments: arguments)
         bootstrapDataFileIfNeeded(at: fileURL)
-        return AppConfiguration(dataFileURL: fileURL)
+        return AppConfiguration(source: source, dataFileURL: fileURL, authFileURL: authFileURL)
+    }
+
+    private static func configuredSource(
+        environment: [String: String],
+        arguments: [String]
+    ) -> Source {
+        if let argumentValue = value(after: "--source", in: arguments),
+           let source = Source(rawValue: argumentValue.lowercased()) {
+            return source
+        }
+
+        if let environmentValue = environment["CODEX_RATE_LIMITS_SOURCE"],
+           let source = Source(rawValue: environmentValue.lowercased()) {
+            return source
+        }
+
+        return .codex
     }
 
     private static func configuredDataFileURL(
@@ -26,6 +52,25 @@ struct AppConfiguration {
 
         return applicationSupportDirectory()
             .appendingPathComponent("ratelimits.json")
+            .standardizedFileURL
+    }
+
+    private static func configuredAuthFileURL(
+        environment: [String: String],
+        arguments: [String]
+    ) -> URL {
+        if let argumentPath = value(after: "--auth-file", in: arguments) {
+            return URL(fileURLWithPath: expandingTilde(in: argumentPath)).standardizedFileURL
+        }
+
+        if let environmentPath = environment["CODEX_AUTH_FILE"], !environmentPath.isEmpty {
+            return URL(fileURLWithPath: expandingTilde(in: environmentPath)).standardizedFileURL
+        }
+
+        return FileManager.default
+            .homeDirectoryForCurrentUser
+            .appendingPathComponent(".codex", isDirectory: true)
+            .appendingPathComponent("auth.json")
             .standardizedFileURL
     }
 

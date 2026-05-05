@@ -7,9 +7,8 @@ public final class LocalJSONRateLimitProvider: RateLimitProviding, @unchecked Se
     private let pollInterval: TimeInterval
     private let queue = DispatchQueue(label: "com.codexratelimits.local-json-provider")
     private var timer: DispatchSourceTimer?
-    private var lastFingerprint: FileFingerprint?
 
-    public init(fileURL: URL, pollInterval: TimeInterval = 2) {
+    public init(fileURL: URL, pollInterval: TimeInterval = 1) {
         self.fileURL = fileURL
         self.pollInterval = pollInterval
     }
@@ -25,7 +24,7 @@ public final class LocalJSONRateLimitProvider: RateLimitProviding, @unchecked Se
             let timer = DispatchSource.makeTimerSource(queue: self.queue)
             timer.schedule(deadline: .now(), repeating: self.pollInterval)
             timer.setEventHandler { [weak self] in
-                self?.loadIfChanged()
+                self?.load()
             }
 
             self.timer = timer
@@ -42,7 +41,7 @@ public final class LocalJSONRateLimitProvider: RateLimitProviding, @unchecked Se
 
     public func refreshNow() {
         queue.async { [weak self] in
-            self?.load(force: true)
+            self?.load()
         }
     }
 
@@ -56,25 +55,9 @@ public final class LocalJSONRateLimitProvider: RateLimitProviding, @unchecked Se
         try RateLimitJSON.decoder().decode(RateLimitSnapshot.self, from: data)
     }
 
-    private func loadIfChanged() {
+    private func load() {
         do {
-            let fingerprint = try makeFingerprint()
-            guard fingerprint != lastFingerprint else { return }
-            load(force: true)
-        } catch {
-            emit(.failure(error))
-        }
-    }
-
-    private func load(force: Bool) {
-        do {
-            let fingerprint = try makeFingerprint()
-            if !force, fingerprint == lastFingerprint {
-                return
-            }
-
             let snapshot = try readSnapshot()
-            lastFingerprint = fingerprint
             emit(.success(snapshot))
         } catch {
             emit(.failure(error))
@@ -84,17 +67,4 @@ public final class LocalJSONRateLimitProvider: RateLimitProviding, @unchecked Se
     private func emit(_ result: Result<RateLimitSnapshot, Error>) {
         onSnapshot?(result)
     }
-
-    private func makeFingerprint() throws -> FileFingerprint {
-        let values = try fileURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
-        return FileFingerprint(
-            modifiedAt: values.contentModificationDate,
-            fileSize: values.fileSize
-        )
-    }
-}
-
-private struct FileFingerprint: Equatable {
-    var modifiedAt: Date?
-    var fileSize: Int?
 }
