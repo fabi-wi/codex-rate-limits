@@ -43,7 +43,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             rootView: RateLimitPopoverView(
                 store: store,
                 onQuit: {
-                    CompanionLaunchSuppression.suppressForCurrentCodexSession()
+                    CompanionLaunchSuppression.suppressForCurrentHostSession()
                     NSApplication.shared.terminate(nil)
                 }
             )

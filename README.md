@@ -2,14 +2,14 @@
 
 # Codex Rate Limits
 
-Unofficial macOS menu-bar companion for keeping Codex rate limits visible while you work.
+Unofficial macOS menu-bar companion for keeping Codex rate limits visible while you work in the current ChatGPT desktop app or the legacy Codex app.
 
 The app shows two concentric indicators:
 
 - **Outer ring:** weekly limit
 - **Inner ring:** 5-hour limit
 
-It reads the same live Codex usage data shown in the Codex desktop app, then displays the remaining percentage and reset timing in a small translucent macOS popover.
+It reads the same live Codex usage data used by the ChatGPT desktop app's Codex experience, then displays the remaining percentage and reset timing in a small translucent macOS popover.
 
 ## Install
 
@@ -36,15 +36,15 @@ If macOS blocks first launch because the app is not notarized yet, right-click `
 
 - macOS 14 or newer
 - Apple Silicon Mac for the prebuilt Homebrew and release downloads
-- Codex desktop app installed
-- Codex signed in with ChatGPT
+- ChatGPT desktop app with Codex installed (the legacy standalone Codex app is also supported)
+- Codex signed in with your ChatGPT account
 - Local Codex auth file at `~/.codex/auth.json`
 
 No personal project path or manual data file is required for normal use.
 
 ## How It Works
 
-Codex Rate Limits reads your local Codex auth file and calls:
+Codex Rate Limits reads the local Codex auth file shared by the ChatGPT desktop app, Codex CLI, and legacy Codex app, then calls:
 
 ```text
 https://chatgpt.com/backend-api/wham/usage
@@ -56,6 +56,8 @@ It maps Codex usage windows like this:
 - `limit_window_seconds` near `604800` -> weekly limit
 
 The app polls every 30 seconds and refreshes immediately when you open the popover.
+
+[OpenAI documents](https://help.openai.com/en/articles/11369540-using-codex-with-chatgpt) these as Codex/agentic usage associated with your ChatGPT plan. They are separate from unrelated ChatGPT limits such as file uploads, images, and voice.
 
 ## Privacy
 
@@ -88,11 +90,11 @@ open Package.swift
 
 Select the `CodexRateLimitsApp` scheme and run it.
 
-## Automatic Opening With Codex
+## Automatic Opening With ChatGPT or Codex
 
 The downloadable app works as soon as you open it.
 
-If you are building from source and want the companion to open automatically when Codex is running, install the optional local LaunchAgent:
+If you are building from source and want the companion to open automatically when the current ChatGPT desktop app (or the legacy Codex app) is running, install the optional local LaunchAgent:
 
 ```bash
 ./scripts/install-codex-launcher.sh
