@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 - 2026-07-10
+
+ChatGPT desktop compatibility release.
+
+- Added automatic companion launch for the current `/Applications/ChatGPT.app` host.
+- Preserved automatic launch support for legacy `/Applications/Codex.app` installations.
+- Updated host termination and session-level close suppression for both desktop app names.
+- Clarified that the displayed limits are Codex/agentic usage windows associated with the user's ChatGPT plan.
+
 ## 0.2.0 - 2026-05-05
 
 Release-ready live Codex version.
