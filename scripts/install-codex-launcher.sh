@@ -42,4 +42,5 @@ launchctl kickstart -k "$USER_DOMAIN/$LABEL"
 
 echo "Installed $LABEL"
 echo "LaunchAgent: $PLIST"
-echo "The Codex Rate Limits app will open automatically when /Applications/Codex.app is running."
+echo "Codex Rate Limits will open automatically with /Applications/ChatGPT.app."
+echo "Legacy /Applications/Codex.app installations are also supported."

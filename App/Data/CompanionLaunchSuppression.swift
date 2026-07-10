@@ -2,8 +2,8 @@ import AppKit
 import Foundation
 
 enum CompanionLaunchSuppression {
-    static func suppressForCurrentCodexSession() {
-        let value = runningCodexPID().map(String.init) ?? "unknown"
+    static func suppressForCurrentHostSession() {
+        let value = runningHostPID().map(String.init) ?? "unknown"
 
         do {
             try FileManager.default.createDirectory(
@@ -20,14 +20,15 @@ enum CompanionLaunchSuppression {
         FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("CodexRateLimits", isDirectory: true)
-            .appendingPathComponent("launch-suppressed-codex.pid")
+            .appendingPathComponent("launch-suppressed-host.pid")
     }
 
-    private static func runningCodexPID() -> pid_t? {
+    private static func runningHostPID() -> pid_t? {
         NSWorkspace.shared.runningApplications
             .first { application in
-                application.bundleURL?.path == "/Applications/Codex.app"
-                    || application.bundleIdentifier == "com.openai.codex"
+                application.bundleIdentifier == "com.openai.codex"
+                    || application.bundleURL?.lastPathComponent == "Codex.app"
+                    || application.bundleURL?.lastPathComponent == "ChatGPT.app"
             }?
             .processIdentifier
     }

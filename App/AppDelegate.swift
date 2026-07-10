@@ -5,7 +5,7 @@ import CodexRateLimitsCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarController: StatusBarController?
     private var store: RateLimitStore?
-    private var codexTerminationObserver: NSObjectProtocol?
+    private var hostTerminationObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let configuration = AppConfiguration.load()
@@ -22,26 +22,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.store = store
         self.statusBarController = StatusBarController(store: store)
-        observeCodexTermination()
+        observeHostTermination()
         store.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         store?.stop()
-        if let codexTerminationObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(codexTerminationObserver)
+        if let hostTerminationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(hostTerminationObserver)
         }
     }
 
-    private func observeCodexTermination() {
-        codexTerminationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+    private func observeHostTermination() {
+        hostTerminationObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didTerminateApplicationNotification,
             object: nil,
             queue: .main
         ) { notification in
             guard
                 let application = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-                Self.isCodex(application)
+                Self.isCodexHost(application)
             else {
                 return
             }
@@ -52,8 +52,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    nonisolated private static func isCodex(_ application: NSRunningApplication) -> Bool {
+    nonisolated private static func isCodexHost(_ application: NSRunningApplication) -> Bool {
         application.bundleIdentifier == "com.openai.codex"
-            || application.bundleURL?.path == "/Applications/Codex.app"
+            || application.bundleURL?.lastPathComponent == "Codex.app"
+            || application.bundleURL?.lastPathComponent == "ChatGPT.app"
     }
 }
