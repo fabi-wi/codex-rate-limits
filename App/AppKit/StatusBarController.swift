@@ -35,8 +35,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private func configurePopover() {
         popover.behavior = .transient
         popover.contentSize = NSSize(
-            width: RateLimitPopoverView.preferredSize.width,
-            height: RateLimitPopoverView.preferredSize.height
+            width: RateLimitPopoverView.preferredWidth,
+            height: RateLimitPopoverView.preferredHeight(limitCount: 1)
         )
         popover.delegate = self
         popover.contentViewController = NSHostingController(
@@ -55,6 +55,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             .combineLatest(store.$errorMessage)
             .sink { [weak self] snapshot, errorMessage in
                 self?.renderStatusItem(snapshot: snapshot, errorMessage: errorMessage)
+                self?.resizePopover(for: snapshot)
             }
             .store(in: &cancellables)
     }
@@ -65,11 +66,10 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         button.image = StatusBarRingImage.make(snapshot: snapshot)
         if let snapshot {
             button.title = RateLimitFormatter.percentage(snapshot.lowestRemainingFraction)
-            button.toolTip = """
-            Codex rate limits
-            Week: \(RateLimitFormatter.percentage(snapshot.weekLimit.remainingFraction)) remaining
-            5 Hour: \(RateLimitFormatter.percentage(snapshot.fiveHourLimit.remainingFraction)) remaining
-            """
+            let lines = snapshot.limits.map { limit in
+                "\(limit.displayTitle): \(RateLimitFormatter.percentage(limit.metric.remainingFraction)) remaining"
+            }
+            button.toolTip = (["Codex rate limits"] + lines).joined(separator: "\n")
         } else if errorMessage != nil {
             button.title = "!"
             button.toolTip = "Codex rate limits: live usage could not be read"
@@ -77,6 +77,13 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             button.title = "--"
             button.toolTip = "Codex rate limits"
         }
+    }
+
+    private func resizePopover(for snapshot: RateLimitSnapshot?) {
+        popover.contentSize = NSSize(
+            width: RateLimitPopoverView.preferredWidth,
+            height: RateLimitPopoverView.preferredHeight(limitCount: snapshot?.limits.count ?? 1)
+        )
     }
 
     @objc private func togglePopover(_ sender: Any?) {

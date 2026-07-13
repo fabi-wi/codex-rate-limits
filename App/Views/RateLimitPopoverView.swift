@@ -2,7 +2,12 @@ import SwiftUI
 import CodexRateLimitsCore
 
 struct RateLimitPopoverView: View {
-    static let preferredSize = CGSize(width: 340, height: 456)
+    static let preferredWidth: CGFloat = 340
+
+    static func preferredHeight(limitCount: Int) -> CGFloat {
+        let count = max(limitCount, 1)
+        return min(280 + CGFloat(count * 88), 680)
+    }
 
     @ObservedObject var store: RateLimitStore
     @State private var now = Date()
@@ -31,8 +36,8 @@ struct RateLimitPopoverView: View {
             }
         }
         .frame(
-            width: Self.preferredSize.width,
-            height: Self.preferredSize.height,
+            width: Self.preferredWidth,
+            height: Self.preferredHeight(limitCount: store.snapshot?.limits.count ?? 1),
             alignment: .top
         )
         .preferredColorScheme(.dark)
@@ -45,7 +50,7 @@ struct RateLimitPopoverView: View {
                 Text("Codex Rate Limits")
                     .font(.system(size: 15, weight: .semibold))
 
-                Text("Week and 5-hour availability")
+                Text("Available usage windows")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -87,25 +92,24 @@ struct RateLimitPopoverView: View {
             LimitRingsView(snapshot: snapshot)
                 .padding(.top, 4)
 
-            VStack(spacing: 11) {
-                MetricRowView(
-                    title: "Week Limit",
-                    detail: "Outer circle",
-                    metric: snapshot.weekLimit,
-                    tint: LimitPalette.week,
-                    now: now
-                )
+            ScrollView {
+                LazyVStack(spacing: 11) {
+                    ForEach(Array(snapshot.limits.enumerated()), id: \.offset) { index, limit in
+                        MetricRowView(
+                            title: limit.displayTitle,
+                            detail: limit.durationDescription,
+                            metric: limit.metric,
+                            tint: LimitPalette.preferredColor(at: index),
+                            now: now
+                        )
 
-                GlassDivider()
-
-                MetricRowView(
-                    title: "5 Hour Limit",
-                    detail: "Inner circle",
-                    metric: snapshot.fiveHourLimit,
-                    tint: LimitPalette.fiveHour,
-                    now: now
-                )
+                        if index < snapshot.limits.count - 1 {
+                            GlassDivider()
+                        }
+                    }
+                }
             }
+            .scrollIndicators(snapshot.limits.count > 4 ? .visible : .hidden)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)

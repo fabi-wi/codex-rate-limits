@@ -5,26 +5,23 @@ enum StatusBarRingImage {
     static func make(snapshot: RateLimitSnapshot?) -> NSImage {
         let size = NSSize(width: 22, height: 18)
         let image = NSImage(size: size, flipped: false) { rect in
-            let weekFraction = snapshot?.weekLimit.remainingFraction ?? 0
-            let fiveHourFraction = snapshot?.fiveHourLimit.remainingFraction ?? 0
+            let limits = Array((snapshot?.limits ?? []).prefix(3))
             let center = CGPoint(x: rect.midX, y: rect.midY)
 
-            drawTrack(center: center, radius: 7.1, lineWidth: 2.2)
-            drawTrack(center: center, radius: 4.1, lineWidth: 2.1)
-            drawRing(
-                center: center,
-                radius: 7.1,
-                fraction: weekFraction,
-                lineWidth: 2.2,
-                color: nsColor(for: weekFraction, preferred: .systemBlue)
-            )
-            drawRing(
-                center: center,
-                radius: 4.1,
-                fraction: fiveHourFraction,
-                lineWidth: 2.1,
-                color: nsColor(for: fiveHourFraction, preferred: .systemGreen)
-            )
+            for (index, limit) in limits.enumerated() {
+                let radius = limits.count == 1 ? 5.7 : 7.2 - CGFloat(index) * 2.6
+                let lineWidth = max(2.2 - CGFloat(index) * 0.15, 1.8)
+                let fraction = limit.metric.remainingFraction
+
+                drawTrack(center: center, radius: radius, lineWidth: lineWidth)
+                drawRing(
+                    center: center,
+                    radius: radius,
+                    fraction: fraction,
+                    lineWidth: lineWidth,
+                    color: nsColor(for: fraction, preferred: preferredColor(at: index))
+                )
+            }
             return true
         }
 
@@ -76,6 +73,14 @@ enum StatusBarRingImage {
             return .systemOrange
         default:
             return preferred
+        }
+    }
+
+    private static func preferredColor(at index: Int) -> NSColor {
+        switch index % 3 {
+        case 0: return .systemBlue
+        case 1: return .systemGreen
+        default: return .systemPurple
         }
     }
 }

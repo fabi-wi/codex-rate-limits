@@ -14,8 +14,8 @@ final class LocalJSONRateLimitProviderTests: XCTestCase {
         let provider = LocalJSONRateLimitProvider(fileURL: fileURL)
         let snapshot = try provider.readSnapshot()
 
-        XCTAssertEqual(snapshot.weekLimit.limit, 200000)
-        XCTAssertEqual(snapshot.fiveHourLimit.used, 16500)
+        XCTAssertEqual(snapshot.limits[0].metric.limit, 200000)
+        XCTAssertEqual(snapshot.limits[1].metric.used, 16500)
         XCTAssertEqual(snapshot.sourceDescription, fileURL.path)
     }
 
@@ -35,7 +35,7 @@ final class LocalJSONRateLimitProviderTests: XCTestCase {
         provider.onSnapshot = { result in
             guard case .success(let snapshot) = result else { return }
 
-            if snapshot.weekLimit.used == 50000 && snapshot.fiveHourLimit.used == 10000 {
+            if snapshot.limits[0].metric.used == 50000 && snapshot.limits[1].metric.used == 10000 {
                 updated.fulfill()
             }
         }

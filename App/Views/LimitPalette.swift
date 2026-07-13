@@ -4,8 +4,17 @@ import CodexRateLimitsCore
 enum LimitPalette {
     static let week = Color(red: 0.14, green: 0.48, blue: 0.88)
     static let fiveHour = Color(red: 0.02, green: 0.67, blue: 0.50)
+    static let month = Color(red: 0.62, green: 0.40, blue: 0.92)
     static let warning = Color(red: 0.95, green: 0.55, blue: 0.18)
     static let critical = Color(red: 0.88, green: 0.22, blue: 0.24)
+
+    static func preferredColor(at index: Int) -> Color {
+        switch index % 3 {
+        case 0: return week
+        case 1: return fiveHour
+        default: return month
+        }
+    }
 
     static func displayColor(for metric: RateLimitMetric, preferred: Color) -> Color {
         switch metric.remainingFraction {
