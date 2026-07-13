@@ -62,17 +62,17 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
             throw CodexUsageProviderError.missingRateLimit
         }
 
-        let windows = [rateLimit.primaryWindow, rateLimit.secondaryWindow].compactMap { $0 }
-        guard
-            let fiveHourWindow = closestWindow(in: windows, targetMinutes: 300, matching: { $0 < 1_440 }),
-            let weekWindow = closestWindow(in: windows, targetMinutes: 10_080, matching: { $0 >= 1_440 })
-        else {
+        guard !rateLimit.windows.isEmpty else {
             throw CodexUsageProviderError.missingRateLimitWindows
         }
 
         return RateLimitSnapshot(
-            weekLimit: metric(from: weekWindow, now: now),
-            fiveHourLimit: metric(from: fiveHourWindow, now: now),
+            limits: rateLimit.windows.map { window in
+                RateLimitWindow(
+                    durationSeconds: window.limitWindowSeconds,
+                    metric: metric(from: window, now: now)
+                )
+            },
             updatedAt: now,
             sourceDescription: "Codex usage"
         )
@@ -147,21 +147,6 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
         onSnapshot?(result)
     }
 
-    private static func closestWindow(
-        in windows: [CodexUsageWindow],
-        targetMinutes: Double,
-        matching predicate: (Double) -> Bool
-    ) -> CodexUsageWindow? {
-        windows
-            .filter { window in
-                guard let minutes = window.windowMinutes else { return false }
-                return predicate(minutes)
-            }
-            .min { lhs, rhs in
-                abs((lhs.windowMinutes ?? 0) - targetMinutes) < abs((rhs.windowMinutes ?? 0) - targetMinutes)
-            }
-    }
-
     private static func metric(from window: CodexUsageWindow, now: Date) -> RateLimitMetric {
         let usedPercent = min(max(window.usedPercent ?? 0, 0), 100)
         return RateLimitMetric(
@@ -194,7 +179,7 @@ public enum CodexUsageProviderError: LocalizedError, Equatable {
         case .missingRateLimit:
             return "Codex usage did not include rate-limit data."
         case .missingRateLimitWindows:
-            return "Codex usage did not include both 5-hour and weekly rate-limit windows."
+            return "Codex usage did not include any rate-limit windows."
         }
     }
 }
@@ -227,12 +212,31 @@ private struct CodexUsageResponse: Decodable {
 }
 
 private struct CodexRateLimit: Decodable {
-    let primaryWindow: CodexUsageWindow?
-    let secondaryWindow: CodexUsageWindow?
+    let windows: [CodexUsageWindow]
 
-    private enum CodingKeys: String, CodingKey {
-        case primaryWindow = "primary_window"
-        case secondaryWindow = "secondary_window"
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: DynamicCodingKey.self)
+        windows = try container.allKeys
+            .filter { $0.stringValue.hasSuffix("_window") }
+            .sorted { $0.stringValue < $1.stringValue }
+            .compactMap { key in
+                try container.decodeIfPresent(CodexUsageWindow.self, forKey: key)
+            }
+    }
+}
+
+private struct DynamicCodingKey: CodingKey {
+    let stringValue: String
+    let intValue: Int?
+
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+        intValue = nil
+    }
+
+    init?(intValue: Int) {
+        stringValue = String(intValue)
+        self.intValue = intValue
     }
 }
 
@@ -241,10 +245,6 @@ private struct CodexUsageWindow: Decodable {
     let limitWindowSeconds: Double?
     let resetAfterSeconds: Double?
     let resetAt: Double?
-
-    var windowMinutes: Double? {
-        limitWindowSeconds.map { $0 / 60 }
-    }
 
     func resetDate(relativeTo now: Date) -> Date? {
         if let resetAt {

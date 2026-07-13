@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2 - 2026-07-13
+
+Flexible usage-window release.
+
+- Fixed live usage loading when OpenAI returns a weekly window without a 5-hour window.
+- Replaced the fixed weekly/5-hour data model with an ordered collection of available windows.
+- Added automatic labels for hourly, daily, weekly, and monthly window durations.
+- Made the menu-bar rings, tooltip, popover rows, and popover height adapt to the returned windows.
+- Preserved compatibility with the original local JSON schema.
+
 ## 0.2.1 - 2026-07-10
 
 ChatGPT desktop compatibility release.

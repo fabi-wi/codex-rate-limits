@@ -4,10 +4,9 @@
 
 Unofficial macOS menu-bar companion for keeping Codex rate limits visible while you work in the current ChatGPT desktop app or the legacy Codex app.
 
-The app shows two concentric indicators:
+The app shows every active usage window returned for your account. Depending on the current plan and rollout, that can be a weekly window only, a 5-hour and weekly pair, or additional window durations in the future.
 
-- **Outer ring:** weekly limit
-- **Inner ring:** 5-hour limit
+Up to three windows are visualized as concentric indicators. All returned windows are listed with their remaining percentage and reset timing in the popover.
 
 It reads the same live Codex usage data used by the ChatGPT desktop app's Codex experience, then displays the remaining percentage and reset timing in a small translucent macOS popover.
 
@@ -50,10 +49,7 @@ Codex Rate Limits reads the local Codex auth file shared by the ChatGPT desktop 
 https://chatgpt.com/backend-api/wham/usage
 ```
 
-It maps Codex usage windows like this:
-
-- `limit_window_seconds` near `18000` -> 5-hour limit
-- `limit_window_seconds` near `604800` -> weekly limit
+It discovers the non-null `*_window` entries in the live response and uses each entry's `limit_window_seconds` value to label and order the windows. The UI does not require both a 5-hour and a weekly window, and new durations such as a monthly window can be displayed without changing the data model.
 
 The app polls every 30 seconds and refreshes immediately when you open the popover.
 
@@ -132,7 +128,7 @@ Update it with:
 ./scripts/update-data.sh 62000 200000 16500 50000
 ```
 
-Arguments are:
+Arguments are for the legacy two-window sample format:
 
 ```text
 WEEK_USED WEEK_LIMIT FIVE_HOUR_USED FIVE_HOUR_LIMIT
@@ -145,6 +141,26 @@ CODEX_RATE_LIMITS_SOURCE=local CODEX_RATE_LIMITS_FILE=/path/to/ratelimits.json .
 ```
 
 ## Local JSON Schema
+
+The expandable schema accepts any number of windows:
+
+```json
+{
+  "limits": [
+    {
+      "durationSeconds": 604800,
+      "metric": {
+        "used": 4,
+        "limit": 100,
+        "resetAt": "2026-07-20T09:00:00Z"
+      }
+    }
+  ],
+  "updatedAt": "2026-07-13T09:00:00Z"
+}
+```
+
+The original two-window schema remains supported for local development:
 
 ```json
 {

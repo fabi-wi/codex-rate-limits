@@ -29,10 +29,10 @@ final class RateLimitMetricTests: XCTestCase {
 
         let snapshot = try LocalJSONRateLimitProvider.decode(data)
 
-        XCTAssertEqual(snapshot.weekLimit.used, 30)
-        XCTAssertEqual(snapshot.weekLimit.remainingFraction, 0.7)
-        XCTAssertEqual(snapshot.fiveHourLimit.used, 25)
-        XCTAssertEqual(snapshot.fiveHourLimit.remainingFraction, 0.5)
+        XCTAssertEqual(snapshot.limits[0].metric.used, 30)
+        XCTAssertEqual(snapshot.limits[0].metric.remainingFraction, 0.7)
+        XCTAssertEqual(snapshot.limits[1].metric.used, 25)
+        XCTAssertEqual(snapshot.limits[1].metric.remainingFraction, 0.5)
     }
 
     func testDecodesPercentBasedMetric() throws {
@@ -46,7 +46,27 @@ final class RateLimitMetricTests: XCTestCase {
 
         let snapshot = try LocalJSONRateLimitProvider.decode(data)
 
-        XCTAssertEqual(snapshot.weekLimit.remainingFraction, 0.8, accuracy: 0.0001)
-        XCTAssertEqual(snapshot.fiveHourLimit.remainingFraction, 0.35, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.limits[0].metric.remainingFraction, 0.8, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.limits[1].metric.remainingFraction, 0.35, accuracy: 0.0001)
+    }
+
+    func testDecodesExpandableLimitsSchema() throws {
+        let data = """
+        {
+          "limits": [
+            {
+              "durationSeconds": 2592000,
+              "metric": { "percentRemaining": 75 }
+            }
+          ],
+          "updatedAt": "2026-07-13T12:00:00Z"
+        }
+        """.data(using: .utf8)!
+
+        let snapshot = try LocalJSONRateLimitProvider.decode(data)
+
+        XCTAssertEqual(snapshot.limits.count, 1)
+        XCTAssertEqual(snapshot.limits[0].displayTitle, "Month Limit")
+        XCTAssertEqual(snapshot.limits[0].metric.remainingFraction, 0.75, accuracy: 0.0001)
     }
 }
