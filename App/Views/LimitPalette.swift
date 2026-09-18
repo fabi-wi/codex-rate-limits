@@ -1,29 +1,21 @@
+import AppKit
 import SwiftUI
 import CodexRateLimitsCore
 
 enum LimitPalette {
-    static let week = Color(red: 0.14, green: 0.48, blue: 0.88)
-    static let fiveHour = Color(red: 0.02, green: 0.67, blue: 0.50)
-    static let month = Color(red: 0.62, green: 0.40, blue: 0.92)
-    static let warning = Color(red: 0.95, green: 0.55, blue: 0.18)
-    static let critical = Color(red: 0.88, green: 0.22, blue: 0.24)
-
-    static func preferredColor(at index: Int) -> Color {
-        switch index % 3 {
-        case 0: return week
-        case 1: return fiveHour
-        default: return month
-        }
+    static func displayColor(for metric: RateLimitMetric) -> Color {
+        Color(nsColor: color(for: metric.remainingFraction))
     }
 
-    static func displayColor(for metric: RateLimitMetric, preferred: Color) -> Color {
-        switch metric.remainingFraction {
-        case ..<0.15:
-            return critical
-        case ..<0.30:
-            return warning
+    // One palette for popover rings, progress bars, and the menu-bar icon.
+    static func color(for remainingFraction: Double) -> NSColor {
+        switch remainingFraction {
+        case ..<0.20:
+            return .systemRed
+        case ..<0.50:
+            return .systemYellow
         default:
-            return preferred
+            return .systemGreen
         }
     }
 }

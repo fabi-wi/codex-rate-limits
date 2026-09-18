@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     name: Test and Build
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 15
 
     steps:
@@ -20,7 +20,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Show Swift Version
-        run: swift --version
+        run: |
+          swift --version
+          xcrun --show-sdk-version
 
       - name: Check Shell Scripts
         run: for script in scripts/*.sh; do bash -n "$script" || exit; done

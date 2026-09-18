@@ -20,10 +20,7 @@ struct LimitRingsView: View {
     var body: some View {
         ZStack {
             ForEach(Array(displayedLimits.enumerated()), id: \.offset) { index, limit in
-                let tint = LimitPalette.displayColor(
-                    for: limit.metric,
-                    preferred: LimitPalette.preferredColor(at: index)
-                )
+                let tint = LimitPalette.displayColor(for: limit.metric)
 
                 Circle()
                     .stroke(.secondary.opacity(0.14), lineWidth: lineWidth(at: index))

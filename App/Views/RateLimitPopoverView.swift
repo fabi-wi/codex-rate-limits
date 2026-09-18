@@ -7,7 +7,7 @@ struct RateLimitPopoverView: View {
 
     static func preferredHeight(limitCount: Int) -> CGFloat {
         let count = max(limitCount, 1)
-        return min(280 + CGFloat(count * 112), 680)
+        return min(280 + CGFloat(count * 88), 680)
     }
 
     @ObservedObject var store: RateLimitStore
@@ -18,45 +18,40 @@ struct RateLimitPopoverView: View {
     private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        ZStack {
-            LiquidGlassBackground()
+        VStack(spacing: 0) {
+            header
 
-            VStack(spacing: 0) {
-                header
+            Divider()
 
-                GlassDivider()
-
-                if let message = store.errorMessage, let snapshot = store.snapshot {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Last updated \(RateLimitFormatter.timestamp(snapshot.updatedAt))")
-                            .fontWeight(.semibold)
-                        Text(message)
-                            .lineLimit(2)
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 10)
-                    .help(message)
+            if let message = store.errorMessage, let snapshot = store.snapshot {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Last updated \(RateLimitFormatter.timestamp(snapshot.updatedAt))")
+                        .fontWeight(.semibold)
+                    Text(message)
+                        .lineLimit(2)
                 }
-
-                Group {
-                    if let snapshot = store.snapshot {
-                        snapshotContent(snapshot)
-                    } else {
-                        emptyContent
-                    }
-                }
-                .frame(maxWidth: .infinity)
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 18)
+                .padding(.top, 10)
+                .help(message)
             }
+
+            Group {
+                if let snapshot = store.snapshot {
+                    snapshotContent(snapshot)
+                } else {
+                    emptyContent
+                }
+            }
+            .frame(maxWidth: .infinity)
         }
         .frame(
             width: Self.preferredWidth,
             height: Self.preferredHeight(limitCount: store.snapshot?.limits.count ?? 1),
             alignment: .top
         )
-        .preferredColorScheme(.dark)
         .onReceive(clock) { now = $0 }
     }
 
@@ -85,14 +80,9 @@ struct RateLimitPopoverView: View {
                 Button(action: onQuit) {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.secondary)
                         .frame(width: 28, height: 28)
-                        .background(.white.opacity(0.14))
-                        .clipShape(Circle())
-                        .overlay {
-                            Circle()
-                                .stroke(.white.opacity(0.20), lineWidth: 1)
-                        }
+                        .background(.quaternary, in: Circle())
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -116,12 +106,11 @@ struct RateLimitPopoverView: View {
                             title: limit.displayTitle,
                             detail: limit.durationDescription,
                             metric: limit.metric,
-                            tint: LimitPalette.preferredColor(at: index),
                             now: now
                         )
 
                         if index < snapshot.limits.count - 1 {
-                            GlassDivider()
+                            Divider()
                         }
                     }
                 }
@@ -144,18 +133,5 @@ struct RateLimitPopoverView: View {
         }
         .frame(maxHeight: .infinity)
         .padding(.horizontal, 22)
-    }
-}
-
-private struct GlassDivider: View {
-    var body: some View {
-        Rectangle()
-            .fill(.white.opacity(0.11))
-            .frame(height: 1)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(.black.opacity(0.12))
-                    .frame(height: 1)
-            }
     }
 }

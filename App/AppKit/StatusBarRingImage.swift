@@ -19,7 +19,7 @@ enum StatusBarRingImage {
                     radius: radius,
                     fraction: fraction,
                     lineWidth: lineWidth,
-                    color: nsColor(for: fraction, preferred: preferredColor(at: index))
+                    color: LimitPalette.color(for: fraction)
                 )
             }
             return true
@@ -65,22 +65,4 @@ enum StatusBarRingImage {
         path.stroke()
     }
 
-    private static func nsColor(for fraction: Double, preferred: NSColor) -> NSColor {
-        switch fraction {
-        case ..<0.15:
-            return .systemRed
-        case ..<0.30:
-            return .systemOrange
-        default:
-            return preferred
-        }
-    }
-
-    private static func preferredColor(at index: Int) -> NSColor {
-        switch index % 3 {
-        case 0: return .systemBlue
-        case 1: return .systemGreen
-        default: return .systemPurple
-        }
-    }
 }
