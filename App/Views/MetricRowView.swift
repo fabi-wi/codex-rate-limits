@@ -5,11 +5,10 @@ struct MetricRowView: View {
     let title: String
     let detail: String
     let metric: RateLimitMetric
-    let tint: Color
     let now: Date
 
     private var displayTint: Color {
-        LimitPalette.displayColor(for: metric, preferred: tint)
+        LimitPalette.displayColor(for: metric)
     }
 
     var body: some View {
@@ -49,7 +48,6 @@ struct MetricRowView: View {
 
             ResetCountdownView(
                 resetAt: metric.resetAt,
-                tint: displayTint,
                 now: now,
                 prefersDays: title == "Week Limit"
             )
@@ -87,7 +85,7 @@ private struct CapsuleProgressBar: View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(.white.opacity(0.12))
+                    .fill(.secondary.opacity(0.14))
 
                 Capsule()
                     .fill(tint)
@@ -101,85 +99,26 @@ private struct CapsuleProgressBar: View {
 
 private struct ResetCountdownView: View {
     let resetAt: Date?
-    let tint: Color
     let now: Date
     let prefersDays: Bool
 
     var body: some View {
-        if let components = RateLimitFormatter.countdownComponents(until: resetAt, relativeTo: now) {
-            HStack(alignment: .top, spacing: 9) {
-                Text("resets in")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 62, alignment: .leading)
-                    .padding(.top, 2)
-
-                HStack(alignment: .top, spacing: 9) {
-                    if showsDays(components) {
-                        CountdownUnitView(
-                            value: "\(components.days)d",
-                            label: "days",
-                            tint: tint
-                        )
-                    }
-
-                    CountdownUnitView(
-                        value: "\(RateLimitFormatter.twoDigit(hourValue(components)))h",
-                        label: "hours",
-                        tint: tint
-                    )
-
-                    CountdownUnitView(
-                        value: "\(RateLimitFormatter.twoDigit(components.minutes))m",
-                        label: "minutes",
-                        tint: tint
-                    )
-
-                    CountdownUnitView(
-                        value: "\(RateLimitFormatter.twoDigit(components.seconds))s",
-                        label: "seconds",
-                        tint: tint
-                    )
-                }
+        Group {
+            if let components = RateLimitFormatter.countdownComponents(until: resetAt, relativeTo: now) {
+                Text("resets in \(countdown(components))")
+                    .monospacedDigit()
+                    .accessibilityLabel("resets in \(components.days) days, \(components.hours) hours, \(components.minutes) minutes, \(components.seconds) seconds")
+            } else {
+                Text("reset time unavailable")
             }
-            .accessibilityLabel("resets in \(components.days) days, \(components.hours) hours, \(components.minutes) minutes, \(components.seconds) seconds")
-        } else {
-            Text("reset time unavailable")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.tertiary)
         }
+        .font(.caption)
+        .fontWeight(.semibold)
+        .foregroundStyle(.secondary)
     }
 
-    private func showsDays(_ components: RateLimitCountdownComponents) -> Bool {
-        prefersDays || components.days > 0
-    }
-
-    private func hourValue(_ components: RateLimitCountdownComponents) -> Int {
-        showsDays(components) ? components.hours : components.totalHours
-    }
-}
-
-private struct CountdownUnitView: View {
-    let value: String
-    let label: String
-    let tint: Color
-
-    var body: some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(tint)
-                .shadow(color: tint.opacity(0.24), radius: 5, x: 0, y: 0)
-
-            Text(label)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-        }
-        .frame(width: 43)
+    private func countdown(_ components: RateLimitCountdownComponents) -> String {
+        let days = prefersDays || components.days > 0 ? "\(components.days)d " : ""
+        return "\(days)\(RateLimitFormatter.twoDigit(components.hours))h \(RateLimitFormatter.twoDigit(components.minutes))m \(RateLimitFormatter.twoDigit(components.seconds))s"
     }
 }

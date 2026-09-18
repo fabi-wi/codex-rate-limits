@@ -55,6 +55,8 @@ The app polls every 30 seconds and requests a refresh when you open the popover.
 
 [OpenAI documents](https://help.openai.com/en/articles/11369540-using-codex-with-chatgpt) these as Codex/agentic usage associated with your ChatGPT plan. They are separate from unrelated ChatGPT limits such as file uploads, images, and voice.
 
+The popover uses the native macOS background and corner shape, following the system's light or dark appearance. Rings and progress bars are green with at least 50% remaining, yellow from 20% to below 50%, and red below 20%. Reset countdowns use a single compact line, such as `resets in 5d 23h 03m 47s`.
+
 ## Privacy
 
 The app uses your Codex access token in memory only to request your rate-limit usage. It does not log, print, upload, or store tokens.
@@ -140,6 +142,12 @@ You can also choose any JSON file:
 CODEX_RATE_LIMITS_SOURCE=local CODEX_RATE_LIMITS_FILE=/path/to/ratelimits.json ./scripts/run.sh
 ```
 
+To open the popover immediately for a visual check, launch the built executable with `--show-popover`:
+
+```bash
+.build/release/CodexRateLimits.app/Contents/MacOS/CodexRateLimits --source local --data-file Data/ratelimits.json --show-popover
+```
+
 ## Local JSON Schema
 
 The expandable schema accepts any number of windows:
@@ -210,7 +218,7 @@ swift test
 ## Release Packaging
 
 ```bash
-./scripts/package_release.sh 0.2.3
+./scripts/package_release.sh 0.2.4
 ```
 
 Packaging runs the tests, verifies a relocated first launch, and checks the archive and app signature. The version must match `Resources/Info.plist`. GitHub CI also uploads the verified archive as a build artifact.
@@ -219,7 +227,7 @@ Publish from a clean, committed `main` branch after authenticating GitHub CLI:
 
 ```bash
 gh auth login
-./scripts/publish_release.sh 0.2.3
+./scripts/publish_release.sh 0.2.4
 ```
 
 For an optional live check using your existing local Codex sign-in:

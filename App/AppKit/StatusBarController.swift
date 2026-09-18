@@ -4,7 +4,7 @@ import SwiftUI
 import CodexRateLimitsCore
 
 @MainActor
-final class StatusBarController: NSObject, NSPopoverDelegate {
+final class StatusBarController: NSObject {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private let store: RateLimitStore
@@ -38,7 +38,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             width: RateLimitPopoverView.preferredWidth,
             height: RateLimitPopoverView.preferredHeight(limitCount: 1)
         )
-        popover.delegate = self
         popover.contentViewController = NSHostingController(
             rootView: RateLimitPopoverView(
                 store: store,
@@ -95,57 +94,11 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         }
     }
 
-    private func showPopover() {
+    func showPopover() {
         guard let button = statusItem.button else { return }
 
         store.refresh()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
-        configurePopoverWindow()
-        positionPopoverBelowMenuBar(relativeTo: button)
-    }
-
-    func popoverDidShow(_ notification: Notification) {
-        configurePopoverWindow()
-        guard let button = statusItem.button else { return }
-        positionPopoverBelowMenuBar(relativeTo: button)
-    }
-
-    private func configurePopoverWindow() {
-        guard let window = popover.contentViewController?.view.window else { return }
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.hasShadow = true
-    }
-
-    private func positionPopoverBelowMenuBar(relativeTo button: NSStatusBarButton) {
-        guard
-            let window = popover.contentViewController?.view.window,
-            let buttonWindow = button.window,
-            let screen = buttonWindow.screen ?? NSScreen.main
-        else {
-            return
-        }
-
-        let buttonFrame = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
-        let visibleFrame = screen.visibleFrame
-        let margin: CGFloat = 8
-        let menuBarGap: CGFloat = 6
-        var frame = window.frame
-
-        frame.origin.x = buttonFrame.midX - (frame.width / 2)
-        frame.origin.y = buttonFrame.minY - frame.height - menuBarGap
-
-        frame.origin.x = min(
-            max(frame.origin.x, visibleFrame.minX + margin),
-            visibleFrame.maxX - frame.width - margin
-        )
-        frame.origin.y = min(
-            frame.origin.y,
-            visibleFrame.maxY - frame.height - margin
-        )
-        frame.origin.y = max(frame.origin.y, visibleFrame.minY + margin)
-
-        window.setFrame(frame, display: true)
     }
 }

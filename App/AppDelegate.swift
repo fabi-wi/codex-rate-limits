@@ -24,6 +24,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.statusBarController = StatusBarController(store: store)
         observeHostTermination()
         store.start()
+
+        if CommandLine.arguments.contains("--show-popover") {
+            statusBarController?.showPopover()
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {

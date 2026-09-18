@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.4 - 2026-09-18
+
+Native macOS popover and compact usage display.
+
+- Removed the extra glass background, custom border, and manual window positioning so macOS owns the popover shape and edges.
+- Followed the system appearance with semantic colors and native dividers.
+- Replaced countdown tiles and unit captions with one compact line beside `resets in`.
+- Unified ring, progress bar, and menu-bar colors: green at 50% or more remaining, yellow at 20% to below 50%, red below 20%.
+- Built release archives with the macOS 26 SDK for the current native appearance while retaining macOS 14 compatibility.
+
 ## 0.2.3 - 2026-09-18
 
 Maintenance and reliability release.
