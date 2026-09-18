@@ -49,6 +49,10 @@ final class LocalJSONRateLimitProviderTests: XCTestCase {
         provider.stop()
     }
 
+    func testRejectsEmptyWindows() {
+        XCTAssertThrowsError(try LocalJSONRateLimitProvider.decode(Data(#"{"limits":[]}"#.utf8)))
+    }
+
     private var sampleData: Data {
         """
         {

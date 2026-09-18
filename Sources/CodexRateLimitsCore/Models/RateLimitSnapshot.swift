@@ -43,6 +43,13 @@ extension RateLimitSnapshot: Codable {
         let sourceDescription = try container.decodeIfPresent(String.self, forKey: .sourceDescription)
 
         if let limits = try container.decodeIfPresent([RateLimitWindow].self, forKey: .limits) {
+            guard !limits.isEmpty else {
+                throw DecodingError.dataCorruptedError(
+                    forKey: .limits,
+                    in: container,
+                    debugDescription: "Supply at least one rate-limit window."
+                )
+            }
             self.init(limits: limits, updatedAt: updatedAt, sourceDescription: sourceDescription)
             return
         }
