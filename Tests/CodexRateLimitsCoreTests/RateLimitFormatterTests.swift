@@ -4,7 +4,7 @@ import XCTest
 final class RateLimitFormatterTests: XCTestCase {
     func testCountdownComponentsBreaksIntervalIntoDisplayUnits() {
         let components = RateLimitCountdownComponents(
-            timeInterval: (6 * 86_400) + (4 * 3_600) + (32 * 60) + 18
+            timeInterval: 534_738 // 6 days, 4 hours, 32 minutes, 18 seconds
         )
 
         XCTAssertEqual(components.days, 6)
