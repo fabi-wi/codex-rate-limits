@@ -51,7 +51,7 @@ https://chatgpt.com/backend-api/wham/usage
 
 It discovers the non-null `*_window` entries in the live response and uses each entry's `limit_window_seconds` value to label and order the windows. The UI does not require both a 5-hour and a weekly window, and new durations such as a monthly window can be displayed without changing the data model.
 
-The app polls every 30 seconds and refreshes immediately when you open the popover.
+The app polls every 30 seconds and requests a refresh when you open the popover. Refreshes share any request already in flight and time out after 20 seconds. If a refresh fails, the menu bar shows `!` and the popover marks the previous reading as stale with its last update time.
 
 [OpenAI documents](https://help.openai.com/en/articles/11369540-using-codex-with-chatgpt) these as Codex/agentic usage associated with your ChatGPT plan. They are separate from unrelated ChatGPT limits such as file uploads, images, and voice.
 
@@ -210,14 +210,22 @@ swift test
 ## Release Packaging
 
 ```bash
-./scripts/package_release.sh 0.2.0
+./scripts/package_release.sh 0.2.3
 ```
 
-Publish a release after authenticating GitHub CLI:
+Packaging runs the tests, verifies a relocated first launch, and checks the archive and app signature. The version must match `Resources/Info.plist`. GitHub CI also uploads the verified archive as a build artifact.
+
+Publish from a clean, committed `main` branch after authenticating GitHub CLI:
 
 ```bash
 gh auth login
-./scripts/publish_release.sh 0.2.0
+./scripts/publish_release.sh 0.2.3
+```
+
+For an optional live check using your existing local Codex sign-in:
+
+```bash
+CODEX_RATE_LIMITS_LIVE_CHECK=1 swift test --filter CodexUsageRequestTests/testLiveUsageWhenExplicitlyEnabled
 ```
 
 ## License

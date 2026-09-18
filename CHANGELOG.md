@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.3 - 2026-09-18
+
+Maintenance and reliability release.
+
+- Fixed bundled sample loading after installing the app outside its build directory.
+- Avoided creating demo data when using live Codex usage.
+- Coalesced overlapping refresh requests, added a request timeout, and cancelled pending requests when stopping.
+- Made failed refreshes visible in the menu bar and labelled retained readings with their last update time.
+- Rejected missing usage values and empty local window lists instead of displaying misleading availability.
+- Integrated the detailed reset countdown with flexible usage windows.
+- Added request lifecycle tests and an installation smoke test to release packaging.
+- Updated and pinned GitHub Actions; CI now produces verified release archives.
+- Required matching release versions and a clean, committed main branch for publishing.
+
 ## 0.2.2 - 2026-07-13
 
 Flexible usage-window release.

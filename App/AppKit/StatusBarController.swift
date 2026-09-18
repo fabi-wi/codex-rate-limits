@@ -64,15 +64,16 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         guard let button = statusItem.button else { return }
 
         button.image = StatusBarRingImage.make(snapshot: snapshot)
-        if let snapshot {
+        if let errorMessage {
+            button.title = "!"
+            let updated = snapshot.map { "\nLast updated \(RateLimitFormatter.timestamp($0.updatedAt))" } ?? ""
+            button.toolTip = "Codex rate limits: \(errorMessage)\(updated)"
+        } else if let snapshot {
             button.title = RateLimitFormatter.percentage(snapshot.lowestRemainingFraction)
             let lines = snapshot.limits.map { limit in
                 "\(limit.displayTitle): \(RateLimitFormatter.percentage(limit.metric.remainingFraction)) remaining"
             }
             button.toolTip = (["Codex rate limits"] + lines).joined(separator: "\n")
-        } else if errorMessage != nil {
-            button.title = "!"
-            button.toolTip = "Codex rate limits: live usage could not be read"
         } else {
             button.title = "--"
             button.toolTip = "Codex rate limits"

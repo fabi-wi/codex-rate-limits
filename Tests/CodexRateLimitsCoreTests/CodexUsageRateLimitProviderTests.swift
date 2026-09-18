@@ -122,7 +122,7 @@ final class CodexUsageRateLimitProviderTests: XCTestCase {
         XCTAssertEqual(snapshot.lowestRemainingFraction, 0.88, accuracy: 0.0001)
     }
 
-    func testThrowsWhenRateLimitWindowsAreMissing() {
+    func testAcceptsWindowWithoutDuration() {
         let data = #"{"rate_limit":{"primary_window":{"used_percent":0}}}"#.data(using: .utf8)!
 
         XCTAssertNoThrow(try CodexUsageRateLimitProvider.decodeSnapshot(from: data))
@@ -135,4 +135,19 @@ final class CodexUsageRateLimitProviderTests: XCTestCase {
             XCTAssertEqual(error as? CodexUsageProviderError, .missingRateLimitWindows)
         }
     }
+    func testRejectsMissingOrNullUsageInsteadOfShowingFullAvailability() {
+        for window in ["{}", #"{"used_percent":null}"#] {
+            let data = "{\"rate_limit\":{\"primary_window\":\(window)}}".data(using: .utf8)!
+            XCTAssertThrowsError(try CodexUsageRateLimitProvider.decodeSnapshot(from: data))
+        }
+    }
+
+    func testClampsOutOfRangeUsage() throws {
+        for (used, remaining) in [(-10, 1.0), (125, 0.0)] {
+            let data = "{\"rate_limit\":{\"primary_window\":{\"used_percent\":\(used)}}}".data(using: .utf8)!
+            let snapshot = try CodexUsageRateLimitProvider.decodeSnapshot(from: data)
+            XCTAssertEqual(snapshot.lowestRemainingFraction, remaining)
+        }
+    }
+
 }

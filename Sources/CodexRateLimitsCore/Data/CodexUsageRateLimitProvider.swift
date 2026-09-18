@@ -11,6 +11,9 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
     private let session: URLSession
     private let queue = DispatchQueue(label: "com.codexratelimits.codex-usage-provider")
     private var timer: DispatchSourceTimer?
+    // Accessed only on queue. Coalesce timer ticks and popover refreshes.
+    private var activeTask: URLSessionDataTask?
+    private var activeRequestID: UUID?
 
     public init(
         authFileURL: URL = CodexUsageRateLimitProvider.defaultAuthFileURL(),
@@ -25,7 +28,8 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
     }
 
     deinit {
-        stop()
+        timer?.cancel()
+        activeTask?.cancel()
     }
 
     public func start() {
@@ -47,6 +51,9 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
         queue.async { [weak self] in
             self?.timer?.cancel()
             self?.timer = nil
+            self?.activeRequestID = nil
+            self?.activeTask?.cancel()
+            self?.activeTask = nil
         }
     }
 
@@ -86,33 +93,41 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
     }
 
     private func load() {
+        guard activeRequestID == nil else { return }
+
         do {
             let request = try makeRequest()
-            session.dataTask(with: request) { [weak self] data, response, error in
-                if let error {
-                    self?.emit(.failure(error))
-                    return
+            let requestID = UUID()
+            activeRequestID = requestID
+            let task = session.dataTask(with: request) { [weak self] data, response, error in
+                self?.queue.async { [weak self] in
+                    guard let self, self.activeRequestID == requestID else { return }
+                    self.activeRequestID = nil
+                    self.activeTask = nil
+
+                    do {
+                        if let error { throw error }
+                        guard let httpResponse = response as? HTTPURLResponse else {
+                            throw CodexUsageProviderError.invalidResponse
+                        }
+
+                        guard (200..<300).contains(httpResponse.statusCode) else {
+                            throw CodexUsageProviderError.httpStatus(httpResponse.statusCode)
+                        }
+
+                        guard let data else {
+                            throw CodexUsageProviderError.emptyResponse
+                        }
+
+                        let snapshot = try Self.decodeSnapshot(from: data)
+                        self.emit(.success(snapshot))
+                    } catch {
+                        self.emit(.failure(error))
+                    }
                 }
-
-                do {
-                    guard let httpResponse = response as? HTTPURLResponse else {
-                        throw CodexUsageProviderError.invalidResponse
-                    }
-
-                    guard (200..<300).contains(httpResponse.statusCode) else {
-                        throw CodexUsageProviderError.httpStatus(httpResponse.statusCode)
-                    }
-
-                    guard let data else {
-                        throw CodexUsageProviderError.emptyResponse
-                    }
-
-                    let snapshot = try Self.decodeSnapshot(from: data)
-                    self?.emit(.success(snapshot))
-                } catch {
-                    self?.emit(.failure(error))
-                }
-            }.resume()
+            }
+            activeTask = task
+            task.resume()
         } catch {
             emit(.failure(error))
         }
@@ -121,6 +136,8 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
     private func makeRequest() throws -> URLRequest {
         let credentials = try readCredentials()
         var request = URLRequest(url: endpointURL)
+        request.timeoutInterval = 20
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.httpMethod = "GET"
         request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -136,11 +153,11 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
         let data = try Data(contentsOf: authFileURL)
         let auth = try JSONDecoder().decode(CodexAuthFile.self, from: data)
 
-        guard let accessToken = auth.tokens.accessToken, !accessToken.isEmpty else {
+        guard let accessToken = auth.tokens?.accessToken, !accessToken.isEmpty else {
             throw CodexUsageProviderError.missingAccessToken
         }
 
-        return CodexAuthCredentials(accessToken: accessToken, accountID: auth.tokens.accountID)
+        return CodexAuthCredentials(accessToken: accessToken, accountID: auth.tokens?.accountID)
     }
 
     private func emit(_ result: Result<RateLimitSnapshot, Error>) {
@@ -148,7 +165,7 @@ public final class CodexUsageRateLimitProvider: RateLimitProviding, @unchecked S
     }
 
     private static func metric(from window: CodexUsageWindow, now: Date) -> RateLimitMetric {
-        let usedPercent = min(max(window.usedPercent ?? 0, 0), 100)
+        let usedPercent = min(max(window.usedPercent, 0), 100)
         return RateLimitMetric(
             used: usedPercent,
             limit: 100,
@@ -171,6 +188,9 @@ public enum CodexUsageProviderError: LocalizedError, Equatable {
         case .emptyResponse:
             return "Codex usage returned an empty response."
         case .httpStatus(let statusCode):
+            if statusCode == 401 || statusCode == 403 {
+                return "Codex sign-in needs attention. Sign in again in ChatGPT or Codex, then retry."
+            }
             return "Codex usage request failed with HTTP \(statusCode)."
         case .invalidResponse:
             return "Codex usage returned an invalid response."
@@ -185,7 +205,7 @@ public enum CodexUsageProviderError: LocalizedError, Equatable {
 }
 
 private struct CodexAuthFile: Decodable {
-    let tokens: CodexAuthTokens
+    let tokens: CodexAuthTokens?
 }
 
 private struct CodexAuthTokens: Decodable {
@@ -241,7 +261,8 @@ private struct DynamicCodingKey: CodingKey {
 }
 
 private struct CodexUsageWindow: Decodable {
-    let usedPercent: Double?
+    // Missing usage must not be presented as 100% remaining.
+    let usedPercent: Double
     let limitWindowSeconds: Double?
     let resetAfterSeconds: Double?
     let resetAt: Double?

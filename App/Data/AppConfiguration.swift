@@ -17,7 +17,9 @@ struct AppConfiguration {
         let source = configuredSource(environment: environment, arguments: arguments)
         let fileURL = configuredDataFileURL(environment: environment, arguments: arguments)
         let authFileURL = configuredAuthFileURL(environment: environment, arguments: arguments)
-        bootstrapDataFileIfNeeded(at: fileURL)
+        if source == .local {
+            bootstrapDataFileIfNeeded(at: fileURL)
+        }
         return AppConfiguration(source: source, dataFileURL: fileURL, authFileURL: authFileURL)
     }
 
@@ -82,7 +84,17 @@ struct AppConfiguration {
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
             guard !fileManager.fileExists(atPath: fileURL.path) else { return }
 
-            if let sampleURL = Bundle.module.url(forResource: "ratelimits.sample", withExtension: "json") {
+            // SwiftPM's generated accessor searches the build directory. Installed
+            // app bundles keep resources in Contents/Resources instead.
+            let resourceBundle: Bundle
+            if let bundleURL = Bundle.main.url(forResource: "CodexRateLimits_CodexRateLimitsApp", withExtension: "bundle"),
+               let embeddedBundle = Bundle(url: bundleURL) {
+                resourceBundle = embeddedBundle
+            } else {
+                resourceBundle = .module
+            }
+
+            if let sampleURL = resourceBundle.url(forResource: "ratelimits.sample", withExtension: "json") {
                 try fileManager.copyItem(at: sampleURL, to: fileURL)
             }
         } catch {

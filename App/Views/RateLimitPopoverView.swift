@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import CodexRateLimitsCore
 
@@ -6,7 +7,7 @@ struct RateLimitPopoverView: View {
 
     static func preferredHeight(limitCount: Int) -> CGFloat {
         let count = max(limitCount, 1)
-        return min(280 + CGFloat(count * 88), 680)
+        return min(280 + CGFloat(count * 112), 680)
     }
 
     @ObservedObject var store: RateLimitStore
@@ -24,6 +25,21 @@ struct RateLimitPopoverView: View {
                 header
 
                 GlassDivider()
+
+                if let message = store.errorMessage, let snapshot = store.snapshot {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Last updated \(RateLimitFormatter.timestamp(snapshot.updatedAt))")
+                            .fontWeight(.semibold)
+                        Text(message)
+                            .lineLimit(2)
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 10)
+                    .help(message)
+                }
 
                 Group {
                     if let snapshot = store.snapshot {
@@ -59,10 +75,10 @@ struct RateLimitPopoverView: View {
 
             HStack(spacing: 12) {
                 Circle()
-                    .fill(store.errorMessage == nil ? Color.green : Color.orange)
+                    .fill(store.errorMessage == nil && !store.isLoading ? Color.green : Color.orange)
                     .frame(width: 7, height: 7)
 
-                Text(store.errorMessage == nil ? "Live" : "Check data")
+                Text(store.isLoading ? "Loading" : (store.errorMessage == nil ? "Live" : (store.snapshot == nil ? "Error" : "Stale")))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -80,6 +96,7 @@ struct RateLimitPopoverView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Quit Codex Rate Limits")
                 .help("Close Codex Rate Limits")
             }
         }
@@ -93,7 +110,7 @@ struct RateLimitPopoverView: View {
                 .padding(.top, 4)
 
             ScrollView {
-                LazyVStack(spacing: 11) {
+                LazyVStack(spacing: 14) {
                     ForEach(Array(snapshot.limits.enumerated()), id: \.offset) { index, limit in
                         MetricRowView(
                             title: limit.displayTitle,

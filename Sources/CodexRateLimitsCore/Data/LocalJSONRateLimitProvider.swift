@@ -14,7 +14,7 @@ public final class LocalJSONRateLimitProvider: RateLimitProviding, @unchecked Se
     }
 
     deinit {
-        stop()
+        timer?.cancel()
     }
 
     public func start() {

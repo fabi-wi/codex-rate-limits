@@ -29,5 +29,6 @@ let package = Package(
             dependencies: ["CodexRateLimitsCore"],
             path: "Tests/CodexRateLimitsCoreTests"
         )
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )
