@@ -1,4 +1,4 @@
-<img width="1672" height="941" alt="ChatGPT Image 5  Mai 2026, 19_54_07" src="https://github.com/user-attachments/assets/2906e35c-8b6c-481e-9c7c-3b6d23c2e9fe" />
+![Codex Rate Limits product illustration showing weekly and 5-hour limits, green availability rings, and compact reset countdowns.](docs/assets/readme-hero-v0.2.4.png)
 
 # Codex Rate Limits
 
